@@ -34,23 +34,17 @@
 namespace Tgs
 {
   boost::shared_ptr<Random> Random::_instance;
-#ifdef NEW_RAND
-  boost::shared_ptr<random_type> Random::_gen;
-  boost::shared_ptr<generator_type> Random::_rnd;
-#endif
 
-  Random::Random(unsigned int seed)
-    : _seed(seed), _is_single(false)
+  Random::Random(unsigned int s)
+    : _is_single(false)
   {
-
+    seed(s);
   }
 
   Random::Random()
-    : _seed(0), _is_single(true)
+    : _is_single(true)
   {
-#ifdef NEW_RAND
-    seed();
-#endif
+    seed(0);
   }
 
   double Random::generateGaussian(double mean, double sigma)
@@ -86,40 +80,22 @@ namespace Tgs
 
   int Random::generateInt()
   {
-#ifdef NEW_RAND
-    return _rnd->operator ()();
-#else
     if (_is_single)
       return rand();
     else
       return rand_r(&_seed);
-#endif
   }
 
   void Random::seed(unsigned int s)
   {
-#ifdef NEW_RAND
-    _gen.reset(new random_type(s));
-    _rnd.reset(new generator_type(*_gen, number_type(0, RAND_MAX)));
-#else
     if (_is_single)
       srand(s);
     else
       _seed = s;
-#endif
   }
 
   void Random::seed()
   {
-#ifdef NEW_RAND
-    random_type gen = random_type(time(0));
-    generator_type rnd(gen, number_type(0, RAND_MAX));
-    seed(rnd());
-#else
-    if (_is_single)
-      seed(0);
-    else
-      _seed = 0;
-#endif
+    seed(0);
   }
 }

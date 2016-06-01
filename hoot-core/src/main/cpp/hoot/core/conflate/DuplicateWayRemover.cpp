@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -197,12 +197,12 @@ void DuplicateWayRemover::_removeDuplicateNodes(shared_ptr<Way> w1, shared_ptr<W
   else
   {
     bool rev1 = false, rev2 = false;
-    if (w1->isOneWay() == false)
+    if (OsmSchema::getInstance().isOneWay(*w1) == false)
     {
       w1->reverseOrder();
       rev1 = true;
     }
-    else if (w2->isOneWay() == false)
+    else if (OsmSchema::getInstance().isOneWay(*w2) == false)
     {
       w2->reverseOrder();
       rev2 = true;
