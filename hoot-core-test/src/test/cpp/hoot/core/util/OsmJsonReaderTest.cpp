@@ -327,8 +327,8 @@ public:
   void urlTest()
   {
     OsmMapPtr pMap(new OsmMap());
-    QString urlNodes = "http://overpass-api.de/api/interpreter?data=[out:json];node(35.20,-120.61,35.23,-120.58);out;";
-    QString urlWays  = "http://overpass-api.de/api/interpreter?data=[out:json];way(35.21,-120.62,35.22,-120.59);out;";
+    QString urlNodes = "http://overpass-api.de/api/interpreter?data=[out:json];node(35.20,-120.59,35.21,-120.58);out;";
+    QString urlWays  = "http://overpass-api.de/api/interpreter?data=[out:json];way(35.20,-120.59,35.21,-120.58);out;";
     OsmJsonReader uut;
 
     // Get Nodes
