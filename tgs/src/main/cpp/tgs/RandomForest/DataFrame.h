@@ -39,8 +39,9 @@
 #include <string>
 #include <vector>
 
-#include "../HashMap.h"
-#include "../TgsExport.h"
+#include "tgs/HashMap.h"
+#include "tgs/TgsExport.h"
+#include "tgs/Statistics/Random.h"
 
 namespace Tgs
 {
@@ -330,9 +331,10 @@ namespace Tgs
     *
     * @param bootstrap the output container to hold indices to data vectors for the bootstrap set
     * @param oob  the output container to hold indices to data vectors for the out of bag set
+    * @param random  the random number generator object in order to provide consistant results
     */
     void makeBalancedBoostrapAndOobSets(std::vector<unsigned int> & bootstrap, 
-      std::vector<unsigned int> & oob, unsigned int seed = 0) const;
+      std::vector<unsigned int> & oob, Tgs::Random& random) const;
 
     /**
     *  Creates balanced binary bootstrap and out of bag sets with replacement
@@ -354,9 +356,10 @@ namespace Tgs
     *
     * @param bootstrap the output container to hold indices to data vectors for the bootstrap set
     * @param oob  the output container to hold indices to data vectors for the out of bag set
+    * @param random  the random number generator object in order to provide consistant results
     */
     void makeBoostrapAndOobSets(std::vector<unsigned int> & bootstrap, 
-      std::vector<unsigned int> & oob, unsigned int seed = 0) const;
+      std::vector<unsigned int> & oob, Tgs::Random& random) const;
 
     /**
      * Returns what DataFrame considers a null value (NaN in double land).
@@ -410,7 +413,7 @@ namespace Tgs
     * has already been resized to the number of requested factors
     */
     void selectRandomFactors(unsigned int numFactors, std::vector<unsigned int> & fIndices,
-                             unsigned int seed = 0) const;
+                             Tgs::Random& random) const;
 
     /**
     * Adds all factors to the active factor list.

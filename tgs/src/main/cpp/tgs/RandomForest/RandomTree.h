@@ -180,7 +180,7 @@ namespace Tgs
     * Recursive function for building random tree nodes
     */
     void _build(const shared_ptr<const DataFrame>& data, std::vector<unsigned int> & dataSet,
-      boost::shared_ptr<TreeNode> &node, unsigned int nodeSize);
+      boost::shared_ptr<TreeNode> &node, unsigned int nodeSize, Tgs::Random& random);
 
     /**
     * A recursive function to sum the purity gain per node based for its splitting factor

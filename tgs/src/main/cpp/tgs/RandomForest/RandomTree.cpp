@@ -94,7 +94,7 @@ namespace Tgs
       _root->rightChild.reset();
       _root->isPure = false;
 
-      _build(data, indices, _root, nodeSize);
+      _build(data, indices, _root, nodeSize, *Tgs::Random::instance());
     }
     catch(const Tgs::Exception & e)
     {
@@ -391,11 +391,11 @@ namespace Tgs
 
       if(balanced)
       {
-        data->makeBalancedBoostrapAndOobSets(bootstrapSet, _oobSet);
+        data->makeBalancedBoostrapAndOobSets(bootstrapSet, _oobSet, *Tgs::Random::instance());
       }
       else
       {
-        data->makeBoostrapAndOobSets(bootstrapSet, _oobSet);
+        data->makeBoostrapAndOobSets(bootstrapSet, _oobSet, *Tgs::Random::instance());
       }
 
       _root = boost::shared_ptr<TreeNode>(new TreeNode());
@@ -403,7 +403,7 @@ namespace Tgs
       _root->rightChild.reset();
       _root->isPure = false;
 
-      _build(data, bootstrapSet, _root, nodeSize);
+      _build(data, bootstrapSet, _root, nodeSize, *Tgs::Random::instance());
     }
     catch(const Tgs::Exception & e)
     {
@@ -416,7 +416,7 @@ namespace Tgs
   {
     try
     {
-      Tgs::Random::instance()->seed((unsigned int)_treeId);
+      Tgs::Random random(_treeId);
 
       _factPerNode = numFactors;
 
@@ -425,11 +425,11 @@ namespace Tgs
 
       if(balanced)
       {
-        data->makeBalancedBoostrapAndOobSets(bootstrapSet, _oobSet, _treeId);
+        data->makeBalancedBoostrapAndOobSets(bootstrapSet, _oobSet, random);
       }
       else
       {
-        data->makeBoostrapAndOobSets(bootstrapSet, _oobSet, _treeId);
+        data->makeBoostrapAndOobSets(bootstrapSet, _oobSet, random);
       }
 
       _root = boost::shared_ptr<TreeNode>(new TreeNode());
@@ -437,7 +437,7 @@ namespace Tgs
       _root->rightChild.reset();
       _root->isPure = false;
 
-      _build(data, bootstrapSet, _root, nodeSize);
+      _build(data, bootstrapSet, _root, nodeSize, random);
     }
     catch(const Tgs::Exception & e)
     {
@@ -465,7 +465,7 @@ namespace Tgs
       _root->rightChild.reset();
       _root->isPure = false;
 
-      _build(data, bootstrapSet, _root, nodeSize);
+      _build(data, bootstrapSet, _root, nodeSize, *Tgs::Random::instance());
     }
     catch(const Tgs::Exception & e)
     {
@@ -474,8 +474,8 @@ namespace Tgs
 
   }
 
-  void RandomTree::_build(const shared_ptr<const DataFrame>& data,
-    std::vector<unsigned int> & dataSet, boost::shared_ptr<TreeNode> & node, unsigned int nodeSize)
+  void RandomTree::_build(const shared_ptr<const DataFrame>& data, std::vector<unsigned int> & dataSet,
+    boost::shared_ptr<TreeNode> & node, unsigned int nodeSize, Tgs::Random& random)
   {
     try
     {
@@ -503,7 +503,7 @@ namespace Tgs
         double splitVal = 0.0;
         double purityDelta = 0.0;
 
-        data->selectRandomFactors(_factPerNode, factors, _treeId);
+        data->selectRandomFactors(_factPerNode, factors, random);
 
         bool splitPossible = _igc.findDataSplit(*data, factors, dataSet, splitIdx, fIdx, splitVal,
           purityDelta);
@@ -543,14 +543,13 @@ namespace Tgs
           {
             leftSplit.push_back(dataSet[i]);
           }
-          _build(data, leftSplit, node->leftChild, nodeSize);
+          _build(data, leftSplit, node->leftChild, nodeSize, random);
 
           for(unsigned int i = splitIdx; i < dataSet.size(); i++)
           {
             rightSplit.push_back(dataSet[i]);
           }
-
-          _build(data, rightSplit, node->rightChild, nodeSize);
+          _build(data, rightSplit, node->rightChild, nodeSize, random);
         }
         else  //Data is all same value
         {

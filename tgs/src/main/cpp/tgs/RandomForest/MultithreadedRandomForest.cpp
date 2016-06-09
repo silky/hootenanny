@@ -56,12 +56,8 @@ namespace Tgs
   {
     try
     {
-      cout << qHash(_trainInputs.data->toXmlString()) << endl;
-
       tree->trainMulticlass(_trainInputs.data, _trainInputs.numFactors, _trainInputs.nodeSize,
         _trainInputs.balanced);
-      cout << qHash(_trainInputs.data->toXmlString()) << endl;
-
       return tree;
     }
     catch(const Exception & e)

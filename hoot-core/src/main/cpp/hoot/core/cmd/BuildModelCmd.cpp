@@ -110,7 +110,6 @@ public:
     // ideally we'll circle back and update RF to use null values.
     shared_ptr<DataFrame> df = mfe.getSamples().toDataFrame(-1);
 
-    srand(0);
     MultithreadedRandomForest mrf;
 
     auto_ptr<DisableCout> dc;

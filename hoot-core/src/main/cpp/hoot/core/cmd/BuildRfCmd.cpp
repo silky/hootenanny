@@ -75,11 +75,6 @@ public:
 
     shared_ptr<DataFrame> df = ar.read()->toDataFrame(-1);
 
-    srand(0);
-
-    #warning remove these qHash log messages.
-    LOG_VAR(qHash(df->toXmlString()));
-
     LOG_DEBUG("Building Random Forest");
     MultithreadedRandomForest mrf;
 
@@ -90,17 +85,12 @@ public:
       dc.reset(new DisableCout());
     }
     int numFactors = min(df->getNumFactors(), max<unsigned int>(3, df->getNumFactors() / 5));
-
-    LOG_VAR(qHash(df->toXmlString()));
-
     mrf.trainMulticlass(df, 40, numFactors);
-    LOG_VAR(qHash(df->toXmlString()));
     dc.reset();
 
     double error;
     double sigma;
     mrf.findAverageError(df, error, sigma);
-    LOG_VAR(qHash(df->toXmlString()));
     LOG_INFO("Error: " << error << " sigma: " << sigma);
 
     ofstream fileStream;

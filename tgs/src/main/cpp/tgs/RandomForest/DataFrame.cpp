@@ -811,7 +811,7 @@ namespace Tgs
   }
 
   void DataFrame::makeBalancedBoostrapAndOobSets(std::vector<unsigned int> & bootstrap, 
-    std::vector<unsigned int> & oob, unsigned int seed) const
+    std::vector<unsigned int> & oob, Tgs::Random& random) const
   {
     try
     {
@@ -861,7 +861,7 @@ namespace Tgs
         {
           for(itr = idxSortedByClass.begin(); itr != idxSortedByClass.end(); ++itr)
           {
-            r = ((double)rand_r(&seed) / ((double)(RAND_MAX)+(double)(1)));
+            r = ((double)random.generateInt() / ((double)(RAND_MAX)+(double)(1)));
 
             unsigned int rndIdx = (unsigned int)(r * (double)itr->second.size());
             bootstrap[pickCtr] = itr->second[rndIdx];
@@ -989,7 +989,7 @@ namespace Tgs
 
 
   void DataFrame::makeBoostrapAndOobSets(std::vector<unsigned int> & bootstrap, 
-    std::vector<unsigned int> & oob, unsigned int seed) const
+    std::vector<unsigned int> & oob, Tgs::Random& random) const
   {
     try
     {
@@ -1013,7 +1013,7 @@ namespace Tgs
 
         for(unsigned int j = 0; j < bootstrap.size(); j++)
         {
-          r = ((double)rand_r(&seed) / ((double)(RAND_MAX)+(double)(1)));
+          r = ((double)random.generateInt() / ((double)(RAND_MAX)+(double)(1)));
 
           unsigned int rndIdx = (unsigned int)(r * (double)_data.size());
           bootstrap[j] = rndIdx;
@@ -1129,7 +1129,7 @@ namespace Tgs
   }
 
   void DataFrame::selectRandomFactors(unsigned int numFactors,
-    std::vector<unsigned int> & fIndices, unsigned int seed) const
+    std::vector<unsigned int> & fIndices, Tgs::Random& random) const
   {
     try
     {
@@ -1149,7 +1149,7 @@ namespace Tgs
 
         for(unsigned int k = 0; k < numFactors; k++)
         {
-          double rr = (double)rand_r(&seed);
+          double rr = (double)random.generateInt();
 
           r = (rr / ((double)(RAND_MAX)+(double)(1)));
 
