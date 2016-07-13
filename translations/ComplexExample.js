@@ -31,7 +31,7 @@
 
 hoot.require('SchemaTools');
 hoot.require('complexExample');
-hoot.require('complexExample_schema');
+hoot.require('complexExample_schemaX');
 hoot.require('complexExample_rules');
 hoot.require('config');
 hoot.require('translate');
