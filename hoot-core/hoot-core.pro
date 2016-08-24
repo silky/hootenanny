@@ -518,7 +518,9 @@ SOURCES += \
     src/main/cpp/hoot/core/ops/RemoveElementOp.cpp \
     src/main/cpp/hoot/core/ops/RemoveNodeOp.cpp \
     src/main/cpp/hoot/core/ops/RemoveRelationOp.cpp \
-    src/main/cpp/hoot/core/ops/RemoveWayOp.cpp
+    src/main/cpp/hoot/core/ops/RemoveWayOp.cpp \
+    src/main/cpp/hoot/core/algorithms/FrechetDistance.cpp \
+    src/main/cpp/hoot/core/algorithms/FrechetSublineMatcher.cpp
 
 HEADERS += \
     src/main/cpp/hoot/core/util/Progress.h \
@@ -1042,5 +1044,7 @@ HEADERS += \
     src/main/cpp/hoot/core/ops/RemoveElementOp.h \
     src/main/cpp/hoot/core/ops/RemoveNodeOp.h \
     src/main/cpp/hoot/core/ops/RemoveRelationOp.h \
-    src/main/cpp/hoot/core/ops/RemoveWayOp.h
+    src/main/cpp/hoot/core/ops/RemoveWayOp.h \
+    src/main/cpp/hoot/core/algorithms/FrechetDistance.h \
+    src/main/cpp/hoot/core/algorithms/FrechetSublineMatcher.h
 
