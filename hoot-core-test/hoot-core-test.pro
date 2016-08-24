@@ -235,7 +235,8 @@ SOURCES += \
     src/test/cpp/hoot/core/algorithms/KskipBigramDistanceTest.cpp \
     src/test/cpp/hoot/core/test/ConflateCaseTest.cpp \
     src/test/cpp/hoot/core/test/ConflateCaseTestSuite.cpp \
-    src/test/cpp/hoot/core/algorithms/linearreference/WayStringTest.cpp
+    src/test/cpp/hoot/core/algorithms/linearreference/WayStringTest.cpp \
+    src/test/cpp/hoot/core/algorithms/FrechetDistanceTest.cpp
 
 HEADERS += \
     src/test/cpp/hoot/core/test/ConflateCaseTest.h \
