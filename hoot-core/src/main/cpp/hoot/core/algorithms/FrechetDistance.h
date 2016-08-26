@@ -49,11 +49,13 @@ typedef std::vector<vertex_match> frechet_subline;
 class FrechetDistance
 {
 public:
-  FrechetDistance();
-
   static Meters calculate(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2);
   static Meters calculate(frechet_matrix& matrix);
   static Meters calculate(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2);
+
+  static Meters calculatePoly(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2);
+  static Meters calculatePoly(frechet_matrix& matrix);
+  static Meters calculatePoly(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2);
 
   static frechet_matrix calculateMatrix(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2);
 
@@ -61,7 +63,9 @@ public:
   static frechet_subline calculateSubline(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2, Meters maxDistance = 15);
 
 protected:
-  static Meters calculate(frechet_matrix &matrix, const LineString* ls1, const LineString* ls2);
+  FrechetDistance() {}
+
+  static Meters _calculate(frechet_matrix &matrix, const LineString* ls1, const LineString* ls2);
 
 };
 
