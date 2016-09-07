@@ -13,8 +13,10 @@
 namespace hoot
 {
 
-Meters FrechetDistance::calculate(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2)
+Meters FrechetDistance::calculate(const ConstOsmMapPtr& map, const ConstWayPtr& way1, const ConstWayPtr& way2)
 {
+  WayPtr w1(new Way(*way1));
+  WayPtr w2(new Way(*way2));
   //  Check the direction of the two ways
   if (DirectionFinder::isSimilarDirection(map, w1, w2) == false)
   {
@@ -38,11 +40,11 @@ Meters FrechetDistance::calculate(frechet_matrix &matrix)
 Meters FrechetDistance::calculate(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2)
 {
   if (!ls1 || !ls2)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculate - LineString arguments invalid");
   int rows = ls1->getNumPoints();
   int cols = ls2->getNumPoints();
   if (rows < 1 || cols < 1)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculate - LineString arguments not valid sizes");
   frechet_matrix frechet(boost::extents[rows][cols]);
 
   return _calculate(frechet, ls1.get(), ls2.get());
@@ -51,13 +53,13 @@ Meters FrechetDistance::calculate(shared_ptr<const LineString> ls1, shared_ptr<c
 Meters FrechetDistance::_calculate(frechet_matrix &matrix, const LineString* ls1, const LineString* ls2)
 {
   if (matrix.num_dimensions() != 2)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::_calculate - Invalid matrix dimensions");
   int rows = matrix.shape()[0],
       cols = matrix.shape()[1];
   if (rows < 1 || cols < 1)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::_calculate - Invalid matrix size");
   if ((ls1 && (int)ls1->getNumPoints() != rows) || (ls2 && (int)ls2->getNumPoints() != cols))
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::_calculate - LineString and matrix size miss-match");
   bool empty = false;
   if (ls1 && ls2)
     empty = true;
@@ -98,8 +100,10 @@ Meters FrechetDistance::_calculate(frechet_matrix &matrix, const LineString* ls1
   return frechet_distance;
 }
 
-Meters FrechetDistance::calculatePoly(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2)
+Meters FrechetDistance::calculatePoly(const ConstOsmMapPtr& map, const ConstWayPtr& way1, const ConstWayPtr& way2)
 {
+  WayPtr w1(new Way(*way1));
+  WayPtr w2(new Way(*way2));
   //  Check the direction of the two ways
   if (DirectionFinder::isSimilarDirection(map, w1, w2) == false)
   {
@@ -118,13 +122,13 @@ Meters FrechetDistance::calculatePoly(OsmMapPtr map, shared_ptr<Way> w1, shared_
 Meters FrechetDistance::calculatePoly(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2)
 {
   if (!ls1 || !ls2)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculatePoly - LineString arguments invalid");
   //  Three points (plus the first point again) is the smallest polygon
   if (ls1->getNumPoints() < 4 || ls2->getNumPoints() < 4)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculatePoly - LineString arguments not valid sizes");
   //  Make sure the line string is a closed polygon
   if (!ls1->isClosed() || !ls2->isClosed())
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculatePoly - LineString arguments not closed polygons");
 
   //  Remove the last coordinate before processing
   CoordinateSequence* cs1 = GeometryFactory::getDefaultInstance()->getCoordinateSequenceFactory()->create(ls1->getNumPoints() - 1, 2);
@@ -137,7 +141,7 @@ Meters FrechetDistance::calculatePoly(shared_ptr<const LineString> ls1, shared_p
     cs2->setAt(ls2->getCoordinateN(i), i);
   shared_ptr<LineString> ls_mod2(GeometryFactory::getDefaultInstance()->createLineString(cs2));
 
-  frechet_matrix matrix = calculateMatrix(ls1, ls2);
+  frechet_matrix matrix = calculateMatrix(ls_mod1, ls_mod2);
 
   return calculatePoly(matrix);
 }
@@ -145,13 +149,13 @@ Meters FrechetDistance::calculatePoly(shared_ptr<const LineString> ls1, shared_p
 Meters FrechetDistance::calculatePoly(frechet_matrix& matrix)
 {
   if (matrix.num_dimensions() != 2)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculatePoly - Invalid matrix dimensions");
   int rows = matrix.shape()[0],
       cols = matrix.shape()[1];
   if (rows < 3 || cols < 3)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculatePoly - Invalid matrix size");
 
-  Meters best_frechet = 100000000;  //  FIXME: Use max double
+  Meters best_frechet = std::numeric_limits<double>::max();
 
   //  Iterate all columns in the matrix
   for (int start_c = 0; start_c < cols; start_c++)
@@ -199,11 +203,11 @@ Meters FrechetDistance::calculatePoly(frechet_matrix& matrix)
 frechet_matrix FrechetDistance::calculateMatrix(shared_ptr<const LineString> ls1, shared_ptr<const LineString> ls2)
 {
   if (!ls1 || !ls2)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculateMatrix - LineString arguments invalid");
   int rows = ls1->getNumPoints();
   int cols = ls2->getNumPoints();
   if (rows < 1 || cols < 1)
-    throw 1;  //  FIXME: Throw something meaningful
+    throw HootException("FrechetDistance::calculateMatrix - LineString arguments not valid sizes");
   frechet_matrix frechet(boost::extents[rows][cols]);
   for (int r = 0; r < rows; r++)
   {
@@ -213,7 +217,12 @@ frechet_matrix FrechetDistance::calculateMatrix(shared_ptr<const LineString> ls1
   return frechet;
 }
 
-frechet_subline FrechetDistance::calculateSubline(frechet_matrix& matrix, Meters maxDistance)
+frechet_subline FrechetDistance::calculateSubline(frechet_matrix &matrix, Meters maxDistance)
+{
+  return _calculateSubline(matrix, maxDistance);
+}
+
+frechet_subline FrechetDistance::_calculateSubline(frechet_matrix& matrix, Meters maxDistance, bool rev1, bool rev2)
 {
   int rows = matrix.shape()[0],
       cols = matrix.shape()[1];
@@ -257,10 +266,12 @@ frechet_subline FrechetDistance::calculateSubline(frechet_matrix& matrix, Meters
   for (frechet_subline::size_type i = 0; i < starts.size(); i++)
   {
     frechet_subline subline;
-    subline.push_back(starts[i]);
 
     int r = starts[i].first;
     int c = starts[i].second;
+
+    //  Use the starting position and modify it if the ways are reversed
+    subline.push_back(vertex_match((rev1 ? rows - 1 - r : r), (rev2 ? cols - 1 - c : c)));
 
     Meters frechet = matrix[r][c];
 
@@ -285,7 +296,8 @@ frechet_subline FrechetDistance::calculateSubline(frechet_matrix& matrix, Meters
       //  Check that the distance is less than the max distance in order to include this node
       if (matrix[r][c] < maxDistance)
       {
-        subline.push_back(vertex_match(r, c));
+        //  Reverse the row or column index if needed
+        subline.push_back(vertex_match((rev1 ? rows - 1 - r : r), (rev2 ? cols - 1 - c : c)));
         frechet = max(frechet, matrix[r][c]);
       }
       else
@@ -303,15 +315,25 @@ frechet_subline FrechetDistance::calculateSubline(frechet_matrix& matrix, Meters
   return best_subline;
 }
 
-frechet_subline FrechetDistance::calculateSubline(OsmMapPtr map, shared_ptr<Way> w1, shared_ptr<Way> w2, Meters maxDistance)
+frechet_subline FrechetDistance::calculateSubline(const ConstOsmMapPtr& map, const ConstWayPtr& way1, const ConstWayPtr& way2, Meters maxDistance)
 {
+  WayPtr w1(new Way(*way1));
+  WayPtr w2(new Way(*way2));
   //  Check the direction of the two ways
+  bool rev1 = false;
+  bool rev2 = false;
   if (DirectionFinder::isSimilarDirection(map, w1, w2) == false)
   {
     if (OsmSchema::getInstance().isOneWay(*w1) == true)
+    {
       w2->reverseOrder();
+      rev2 = true;
+    }
     else
+    {
       w1->reverseOrder();
+      rev1 = true;
+    }
   }
 
   shared_ptr<const LineString> ls1 = ElementConverter(map).convertToLineString(w1);
@@ -319,7 +341,7 @@ frechet_subline FrechetDistance::calculateSubline(OsmMapPtr map, shared_ptr<Way>
 
   frechet_matrix frechet = calculateMatrix(ls1, ls2);
 
-  return calculateSubline(frechet, maxDistance);
+  return _calculateSubline(frechet, maxDistance, rev1, rev2);
 }
 
 }

@@ -38,10 +38,14 @@
 #include <hoot/core/algorithms/FrechetDistance.h>
 #include <hoot/core/visitors/FindWaysVisitor.h>
 
+#include <hoot/core/io/OsmReader.h>
+
+#include <hoot/core/io/OsmWriter.h>
+#include <hoot/core/MapProjector.h>
+
 #include "../TestUtils.h"
 
 using namespace hoot;
-
 
 namespace hoot
 {
@@ -52,10 +56,29 @@ class FrechetDistanceTest : public CppUnit::TestFixture
   CPPUNIT_TEST(matrixTest);
   CPPUNIT_TEST(sublineTest);
   CPPUNIT_TEST(sublineMatrixTest);
+  CPPUNIT_TEST(sublineMatrixReverseTest);
   CPPUNIT_TEST(polygonTest);
+  CPPUNIT_TEST(writeFiles);
   CPPUNIT_TEST_SUITE_END();
 
 public:
+
+  void writeFiles()
+  {
+    return; // Uncomment to regenerate sample files
+
+    OsmMapPtr map = createTestMapHomologous();
+    writeMap(createTestMapHomologous(), "test-files/algorithms/FrechetHomologous.osm");
+    writeMap(createTestMapPartial(),    "test-files/algorithms/FrechetPartial.osm");
+    writeMap(createTestMapPoly(),       "test-files/algorithms/FrechetPolygon.osm");
+  }
+
+  void writeMap(OsmMapPtr map, QString filename)
+  {
+    OsmWriter writer;
+    writer.setIncludeIds(true);
+    writer.write(map, filename);
+  }
 
   void matrixTest()
   {
@@ -97,6 +120,15 @@ public:
     OsmMapPtr map = createTestMapHomologous();
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculate(map, w1, w2), 0.01);
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetHomologous.osm", map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
     CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculate(map, w1, w2), 0.01);
   }
@@ -158,18 +190,7 @@ public:
 
     CPPUNIT_ASSERT_DOUBLES_EQUAL(2.75, FrechetDistance::calculate(frechet), 0.001);
 
-    frechet_subline optimal_subline;
-    optimal_subline.push_back(vertex_match(0, 3));
-    optimal_subline.push_back(vertex_match(0, 4));
-    optimal_subline.push_back(vertex_match(1, 5));
-    optimal_subline.push_back(vertex_match(2, 6));
-    optimal_subline.push_back(vertex_match(2, 7));
-    optimal_subline.push_back(vertex_match(3, 8));
-    optimal_subline.push_back(vertex_match(4, 9));
-    optimal_subline.push_back(vertex_match(5, 10));
-    optimal_subline.push_back(vertex_match(6, 11));
-    optimal_subline.push_back(vertex_match(7, 12));
-    optimal_subline.push_back(vertex_match(8, 13));
+    frechet_subline optimal_subline = createTestSubline();
 
     frechet_subline subline1 = FrechetDistance::calculateSubline(frechet, 1.25);
 
@@ -193,6 +214,41 @@ public:
     {
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline2[i].first);
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline2[i].second);
+    }
+  }
+
+  void sublineMatrixReverseTest()
+  {
+    frechet_subline optimal_subline = createTestSublineReverse1();
+
+    OsmMapPtr map = createTestMapReverse1();
+    WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    frechet_subline subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+
+    optimal_subline = createTestSublineReverse2();
+
+    map = createTestMapReverse2();
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
     }
   }
 
@@ -274,6 +330,106 @@ public:
     return map;
   }
 
+  OsmMapPtr createTestMapReverse1()
+  {
+    OsmMap::resetCounters();
+    OsmMapPtr map(new OsmMap());
+
+    Coordinate c1[] = {
+      Coordinate(12.5, 14), Coordinate(11.5, 12.7), Coordinate(10.5, 11.3), Coordinate(9.5, 10),
+      Coordinate(8.5, 9.8), Coordinate(7.15, 8.5),  Coordinate(5.8, 7.2),   Coordinate(5.15, 5.2),
+      Coordinate(4.5, 3.2),
+      Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
+
+    Coordinate c2[] = {
+      Coordinate(4.6, 1.6), Coordinate(4.8, 2.6),   Coordinate(3.4, 1.8),   Coordinate(3.4, 2.8),
+      Coordinate(4.1, 3.8), Coordinate(5.05, 5.15), Coordinate(6, 6.5),     Coordinate(7, 7),
+      Coordinate(8, 8.25),  Coordinate(9, 9.5),     Coordinate(10, 9.75),   Coordinate(11, 10.5),
+      Coordinate(12, 11.9), Coordinate(13, 13.2),   Coordinate(13.2, 12.6), Coordinate(13.8, 12.6),
+      Coordinate(14, 11.7),
+      Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
+
+    return map;
+  }
+
+  OsmMapPtr createTestMapReverse2()
+  {
+    OsmMap::resetCounters();
+    OsmMapPtr map(new OsmMap());
+
+    Coordinate c1[] = {
+      Coordinate(4.5, 3.2), Coordinate(5.15, 5.2),  Coordinate(5.8, 7.2),   Coordinate(7.15, 8.5),
+      Coordinate(8.5, 9.8), Coordinate(9.5, 10),    Coordinate(10.5, 11.3), Coordinate(11.5, 12.7),
+      Coordinate(12.5, 14),
+      Coordinate::getNull() };
+    WayPtr way = TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
+    way->setTag("oneway", "true");
+
+    Coordinate c2[] = {
+      Coordinate(14, 11.7), Coordinate(13.8, 12.6), Coordinate(13.2, 12.6), Coordinate(13, 13.2),
+      Coordinate(12, 11.9), Coordinate(11, 10.5),   Coordinate(10, 9.75),   Coordinate(9, 9.5),
+      Coordinate(8, 8.25),  Coordinate(7, 7),       Coordinate(6, 6.5),     Coordinate(5.05, 5.15),
+      Coordinate(4.1, 3.8), Coordinate(3.4, 2.8),   Coordinate(3.4, 1.8),   Coordinate(4.8, 2.6),
+      Coordinate(4.6, 1.6),
+      Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
+
+    return map;
+  }
+
+  frechet_subline createTestSubline()
+  {
+    frechet_subline optimal_subline;
+    optimal_subline.push_back(vertex_match(0, 3));
+    optimal_subline.push_back(vertex_match(0, 4));
+    optimal_subline.push_back(vertex_match(1, 5));
+    optimal_subline.push_back(vertex_match(2, 6));
+    optimal_subline.push_back(vertex_match(2, 7));
+    optimal_subline.push_back(vertex_match(3, 8));
+    optimal_subline.push_back(vertex_match(4, 9));
+    optimal_subline.push_back(vertex_match(5, 10));
+    optimal_subline.push_back(vertex_match(6, 11));
+    optimal_subline.push_back(vertex_match(7, 12));
+    optimal_subline.push_back(vertex_match(8, 13));
+    return optimal_subline;
+  }
+
+  frechet_subline createTestSublineReverse1()
+  {
+    frechet_subline optimal_subline;
+    optimal_subline.push_back(vertex_match(8, 3));
+    optimal_subline.push_back(vertex_match(8, 4));
+    optimal_subline.push_back(vertex_match(7, 5));
+    optimal_subline.push_back(vertex_match(6, 6));
+    optimal_subline.push_back(vertex_match(6, 7));
+    optimal_subline.push_back(vertex_match(5, 8));
+    optimal_subline.push_back(vertex_match(4, 9));
+    optimal_subline.push_back(vertex_match(3, 10));
+    optimal_subline.push_back(vertex_match(2, 11));
+    optimal_subline.push_back(vertex_match(1, 12));
+    optimal_subline.push_back(vertex_match(0, 13));
+    return optimal_subline;
+  }
+
+  frechet_subline createTestSublineReverse2()
+  {
+    frechet_subline optimal_subline;
+    optimal_subline.push_back(vertex_match(0, 13));
+    optimal_subline.push_back(vertex_match(0, 12));
+    optimal_subline.push_back(vertex_match(1, 11));
+    optimal_subline.push_back(vertex_match(2, 10));
+    optimal_subline.push_back(vertex_match(2, 9));
+    optimal_subline.push_back(vertex_match(3, 8));
+    optimal_subline.push_back(vertex_match(4, 7));
+    optimal_subline.push_back(vertex_match(5, 6));
+    optimal_subline.push_back(vertex_match(6, 5));
+    optimal_subline.push_back(vertex_match(7, 4));
+    optimal_subline.push_back(vertex_match(8, 3));
+    return optimal_subline;
+  }
+
   OsmMapPtr createTestMapPoly()
   {
     OsmMap::resetCounters();
@@ -297,7 +453,7 @@ public:
   }
 };
 
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetDistanceTest, "quick");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetDistanceTest, "current");
 
 }
 
