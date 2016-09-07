@@ -26,10 +26,14 @@
  */
 
 #include "FrechetSublineMatcher.h"
+// geos
+#include <geos/geom/LineString.h>
 // hoot
 #include <hoot/core/Factory.h>
-//#include <hoot/core/util/ConfigOptions.h>
 #include <hoot/core/Units.h>
+#include <hoot/core/algorithms/FrechetDistance.h>
+#include <hoot/core/ops/CopySubsetOp.h>
+#include <hoot/core/util/ElementConverter.h>
 
 namespace hoot
 {
@@ -43,9 +47,44 @@ FrechetSublineMatcher::FrechetSublineMatcher()
 WaySublineMatchString FrechetSublineMatcher::findMatch(const ConstOsmMapPtr& map, const ConstWayPtr& way1,
   const ConstWayPtr& way2, double& score, Meters maxRelevantDistance) const
 {
-  WaySublineMatchString s;
-
-  return s;
+  score = 0;
+  Meters mrd = maxRelevantDistance == -1 ? way1->getCircularError() + way2->getCircularError() :
+    maxRelevantDistance;
+  //  Create a copy of the map and the two ways
+  OsmMapPtr mapCopy(new OsmMap());
+  CopySubsetOp(map,
+               way1->getElementId(),
+               way2->getElementId()).apply(mapCopy);
+  WayPtr way1NonConst = mapCopy->getWay(way1->getId());
+  WayPtr way2NonConst = mapCopy->getWay(way2->getId());
+  //  Calculate the Frechet subline
+  frechet_subline max_subline = FrechetDistance::calculateSubline(mapCopy, way1NonConst, way2NonConst, mrd);
+  //  Make sure that there is a valid subline
+  if (max_subline.size() > 1)
+  {
+    return WaySublineMatchString();
+  }
+  //  Create the way sublines
+  WaySubline subline1(WayLocation(map, way1, max_subline[0].first, 0), WayLocation(map, way1, max_subline[max_subline.size() - 1].first, 0));
+  WaySubline subline2(WayLocation(map, way2, max_subline[0].second, 0), WayLocation(map, way2, max_subline[max_subline.size() - 1].second, 0));
+  //  Convert the sublines to ways
+  WayPtr sub1 = subline1.toWay(mapCopy);
+  WayPtr sub2 = subline2.toWay(mapCopy);
+  //  Calculate the score (max length of both sublines)
+  if (sub1->getNodeCount() > 1 && sub2->getNodeCount() > 1)
+  {
+    shared_ptr<LineString> ls1 = ElementConverter(mapCopy).convertToLineString(sub1);
+    shared_ptr<LineString> ls2 = ElementConverter(mapCopy).convertToLineString(sub2);
+    if (ls1->isValid() && ls2->isValid())
+    {
+      score = max(ls1->getLength(), ls2->getLength());
+    }
+  }
+  //  Create the match and match string
+  WaySublineMatch match = WaySublineMatch(subline1, subline2);
+  vector<WaySublineMatch> v;
+  v.push_back(WaySublineMatch(match, map));
+  return WaySublineMatchString(v);
 }
 
 }

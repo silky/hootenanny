@@ -24,40 +24,40 @@
  *
  * @copyright Copyright (C) 2016 DigitalGlobe (http://www.digitalglobe.com/)
  */
-#ifndef FRECHETSUBLINEMATCHER_H
-#define FRECHETSUBLINEMATCHER_H
 
-// hoot
-#include <hoot/core/algorithms/SublineMatcher.h>
+// CPP Unit
+#include <cppunit/extensions/HelperMacros.h>
+#include <cppunit/extensions/TestFactoryRegistry.h>
+#include <cppunit/TestAssert.h>
+#include <cppunit/TestFixture.h>
+
+// GEOS
+#include <geos/geom/LineString.h>
+// Hoot
+#include <hoot/core/algorithms/FrechetDistance.h>
+#include <hoot/core/visitors/FindWaysVisitor.h>
+
+#include "../TestUtils.h"
+
+using namespace hoot;
+
 
 namespace hoot
 {
 
-/**
- * A SublineMatcher based on the Frechet distance algorithm.
- */
-class FrechetSublineMatcher : public SublineMatcher
+class FrechetSublineMatcherTest : public CppUnit::TestFixture
 {
+  CPPUNIT_TEST_SUITE(FrechetSublineMatcherTest);
+  CPPUNIT_TEST(sublineTest);
+  CPPUNIT_TEST_SUITE_END();
+
 public:
-  static std::string className() { return "hoot::FrechetSublineMatcher"; }
+  void sublineTest()
+  {
 
-  FrechetSublineMatcher();
-
-  virtual ~FrechetSublineMatcher() { }
-  /**
-   * @param maxRelevantDistance This value is set on a per match basis because it tends to vary
-   *  based on the CE of the inputs. If set to -1 then the value is derived based on the CE of the
-   *  input ways.
-   */
-  virtual WaySublineMatchString findMatch(const ConstOsmMapPtr& map, const ConstWayPtr& way1,
-    const ConstWayPtr& way2, double& score, Meters maxRelevantDistance = -1) const;
-
-  virtual void setMaxRelevantAngle(Radians /*r*/) { }
-
-  virtual void setMinSplitSize(Meters /*minSplitSize*/) { }
-
-  virtual void setHeadingDelta(Meters /*headingDelta*/) { }
+  }
 };
 
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetSublineMatcherTest, "current");
+
 }
-#endif // FRECHETSUBLINEMATCHER_H
