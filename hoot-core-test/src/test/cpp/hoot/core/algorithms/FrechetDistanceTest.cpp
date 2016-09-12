@@ -67,7 +67,6 @@ public:
   {
     return; // Uncomment to regenerate sample files
 
-    OsmMapPtr map = createTestMapHomologous();
     writeMap(createTestMapHomologous(), "test-files/algorithms/FrechetHomologous.osm");
     writeMap(createTestMapPartial(),    "test-files/algorithms/FrechetPartial.osm");
     writeMap(createTestMapPoly(),       "test-files/algorithms/FrechetPolygon.osm");
@@ -75,6 +74,9 @@ public:
 
   void writeMap(OsmMapPtr map, QString filename)
   {
+    //  First let's project the map to WGS84
+    MapProjector::projectToWgs84(map);
+
     OsmWriter writer;
     writer.setIncludeIds(true);
     writer.write(map, filename);
@@ -127,6 +129,7 @@ public:
     OsmReader reader;
     reader.setDefaultStatus(Status::Unknown1);
     reader.read("test-files/algorithms/FrechetHomologous.osm", map);
+    MapProjector::projectToPlanar(map);
     w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
@@ -160,6 +163,23 @@ public:
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
     }
 
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetHomologous.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    subline = FrechetDistance::calculateSubline(map, w1, w2, 2);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
   }
 
   void sublineMatrixTest()
@@ -215,15 +235,35 @@ public:
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline2[i].first);
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline2[i].second);
     }
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    subline2 = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline2.size());
+
+    for (frechet_subline::size_type i = 0; i < subline2.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline2[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline2[i].second);
+    }
   }
 
   void sublineMatrixReverseTest()
   {
     frechet_subline optimal_subline = createTestSublineReverse1();
 
-    OsmMapPtr map = createTestMapReverse1();
+    OsmMapPtr map = createTestMapPartial();
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->reverseOrder();
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->setTag("oneway", "true");
 
     frechet_subline subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
 
@@ -237,9 +277,11 @@ public:
 
     optimal_subline = createTestSublineReverse2();
 
-    map = createTestMapReverse2();
+    map = createTestMapPartial();
     w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->setTag("oneway", "true");
     w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->reverseOrder();
 
     subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
 
@@ -250,6 +292,50 @@ public:
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
     }
+
+    optimal_subline = createTestSublineReverse1();
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->reverseOrder();
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->setTag("oneway", "true");
+
+    subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+
+    optimal_subline = createTestSublineReverse2();
+
+    map = OsmMapPtr(new OsmMap());
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->setTag("oneway", "true");
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->reverseOrder();
+
+    subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+
   }
 
   void polygonTest()
@@ -280,9 +366,18 @@ public:
     CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculatePoly(frechet), 0.01);
 
     OsmMapPtr map = createTestMapPoly();
-
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculatePoly(map, w1, w2), 0.01);
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPolygon.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
     CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculatePoly(map, w1, w2), 0.01);
   }
@@ -290,7 +385,13 @@ public:
   OsmMapPtr createTestMapHomologous()
   {
     OsmMap::resetCounters();
-    OsmMapPtr map(new OsmMap());
+    shared_ptr<OsmMap> map(new OsmMap());
+    OGREnvelope env;
+    env.MinX = 0;
+    env.MinY = 0;
+    env.MaxX = 1;
+    env.MaxY = 1;
+    MapProjector::projectToOrthographic(map, env);
 
     Coordinate c1[] = {
       Coordinate(0, 0.7),    Coordinate(0.8, 2.5),  Coordinate(1.8, 3.2), Coordinate(5.9, 4.4),
@@ -309,7 +410,13 @@ public:
   OsmMapPtr createTestMapPartial()
   {
     OsmMap::resetCounters();
-    OsmMapPtr map(new OsmMap());
+    shared_ptr<OsmMap> map(new OsmMap());
+    OGREnvelope env;
+    env.MinX = 0;
+    env.MinY = 0;
+    env.MaxX = 1;
+    env.MaxY = 1;
+    MapProjector::projectToOrthographic(map, env);
 
     Coordinate c1[] = {
       Coordinate(4.5, 3.2), Coordinate(5.15, 5.2),  Coordinate(5.8, 7.2),   Coordinate(7.15, 8.5),
@@ -324,55 +431,6 @@ public:
       Coordinate(8, 8.25),  Coordinate(9, 9.5),     Coordinate(10, 9.75),   Coordinate(11, 10.5),
       Coordinate(12, 11.9), Coordinate(13, 13.2),   Coordinate(13.2, 12.6), Coordinate(13.8, 12.6),
       Coordinate(14, 11.7),
-      Coordinate::getNull() };
-    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
-
-    return map;
-  }
-
-  OsmMapPtr createTestMapReverse1()
-  {
-    OsmMap::resetCounters();
-    OsmMapPtr map(new OsmMap());
-
-    Coordinate c1[] = {
-      Coordinate(12.5, 14), Coordinate(11.5, 12.7), Coordinate(10.5, 11.3), Coordinate(9.5, 10),
-      Coordinate(8.5, 9.8), Coordinate(7.15, 8.5),  Coordinate(5.8, 7.2),   Coordinate(5.15, 5.2),
-      Coordinate(4.5, 3.2),
-      Coordinate::getNull() };
-    TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
-
-    Coordinate c2[] = {
-      Coordinate(4.6, 1.6), Coordinate(4.8, 2.6),   Coordinate(3.4, 1.8),   Coordinate(3.4, 2.8),
-      Coordinate(4.1, 3.8), Coordinate(5.05, 5.15), Coordinate(6, 6.5),     Coordinate(7, 7),
-      Coordinate(8, 8.25),  Coordinate(9, 9.5),     Coordinate(10, 9.75),   Coordinate(11, 10.5),
-      Coordinate(12, 11.9), Coordinate(13, 13.2),   Coordinate(13.2, 12.6), Coordinate(13.8, 12.6),
-      Coordinate(14, 11.7),
-      Coordinate::getNull() };
-    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
-
-    return map;
-  }
-
-  OsmMapPtr createTestMapReverse2()
-  {
-    OsmMap::resetCounters();
-    OsmMapPtr map(new OsmMap());
-
-    Coordinate c1[] = {
-      Coordinate(4.5, 3.2), Coordinate(5.15, 5.2),  Coordinate(5.8, 7.2),   Coordinate(7.15, 8.5),
-      Coordinate(8.5, 9.8), Coordinate(9.5, 10),    Coordinate(10.5, 11.3), Coordinate(11.5, 12.7),
-      Coordinate(12.5, 14),
-      Coordinate::getNull() };
-    WayPtr way = TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
-    way->setTag("oneway", "true");
-
-    Coordinate c2[] = {
-      Coordinate(14, 11.7), Coordinate(13.8, 12.6), Coordinate(13.2, 12.6), Coordinate(13, 13.2),
-      Coordinate(12, 11.9), Coordinate(11, 10.5),   Coordinate(10, 9.75),   Coordinate(9, 9.5),
-      Coordinate(8, 8.25),  Coordinate(7, 7),       Coordinate(6, 6.5),     Coordinate(5.05, 5.15),
-      Coordinate(4.1, 3.8), Coordinate(3.4, 2.8),   Coordinate(3.4, 1.8),   Coordinate(4.8, 2.6),
-      Coordinate(4.6, 1.6),
       Coordinate::getNull() };
     TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
 
@@ -433,7 +491,13 @@ public:
   OsmMapPtr createTestMapPoly()
   {
     OsmMap::resetCounters();
-    OsmMapPtr map(new OsmMap());
+    shared_ptr<OsmMap> map(new OsmMap());
+    OGREnvelope env;
+    env.MinX = 0;
+    env.MinY = 0;
+    env.MaxX = 1;
+    env.MaxY = 1;
+    MapProjector::projectToOrthographic(map, env);
 
     Coordinate c1[] = {
       Coordinate(2, 1),      Coordinate(1.7, 2.3),  Coordinate(4.9, 4),   Coordinate(9.6, 3.4),

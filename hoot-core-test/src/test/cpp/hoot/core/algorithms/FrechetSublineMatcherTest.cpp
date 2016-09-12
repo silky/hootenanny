@@ -34,7 +34,13 @@
 // GEOS
 #include <geos/geom/LineString.h>
 // Hoot
-#include <hoot/core/algorithms/FrechetDistance.h>
+#include <hoot/core/MapProjector.h>
+#include <hoot/core/OsmMap.h>
+#include <hoot/core/algorithms/FrechetSublineMatcher.h>
+#include <hoot/core/io/OsmMapReaderFactory.h>
+#include <hoot/core/io/OsmReader.h>
+#include <hoot/core/io/OsmWriter.h>
+#include <hoot/core/util/GeometryUtils.h>
 #include <hoot/core/visitors/FindWaysVisitor.h>
 
 #include "../TestUtils.h"
@@ -49,12 +55,57 @@ class FrechetSublineMatcherTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(FrechetSublineMatcherTest);
   CPPUNIT_TEST(sublineTest);
+  CPPUNIT_TEST(runVTest);
   CPPUNIT_TEST_SUITE_END();
 
 public:
+
+  OsmMapPtr createMap()
+  {
+    shared_ptr<OsmMap> map(new OsmMap());
+    OsmMap::resetCounters();
+    auto_ptr<OGREnvelope> env(GeometryUtils::toOGREnvelope(Envelope(0, 1, 0, 1)));
+    MapProjector::projectToPlanar(map, *env);
+
+    return map;
+  }
+
+
   void sublineTest()
   {
 
+  }
+
+  void runVTest()
+  {
+    return;
+
+    OsmMapPtr map = createMap();
+
+    /*
+     * Create ways like this:
+     * w1 \    / w2
+     *     \  /
+     *      \/
+     */
+    Coordinate c1[] = { Coordinate(0.0, 0.0), Coordinate(-15.0, 50.0), Coordinate::getNull() };
+    WayPtr w1 = TestUtils::createWay(map, Status::Unknown1, c1, 10.0, "w1");
+
+    Coordinate c2[] = { Coordinate(0.0, 0.0), Coordinate(15.0, 50.0), Coordinate::getNull() };
+    WayPtr w2 = TestUtils::createWay(map, Status::Unknown2, c2, 10.0, "w2");
+
+    FrechetSublineMatcher uut;
+//    MaximalSubline uut(new MaximalSubline::ThresholdMatchCriteria(40.0, M_PI / 1.0), 40.0);
+
+    double score;
+    WaySublineMatchString m = uut.findMatch(map, w1, w2, score);
+//    vector<WaySublineMatch> m = uut.findAllMatches(map, w1, w2, score);
+
+    HOOT_STR_EQUALS(1, m.getMatches().size());
+    HOOT_STR_EQUALS(
+      "subline 1: start: way: -1 index: 0 fraction: 0 end: way: -1 index: 1 fraction: 0\n"
+      "subline 2: start: way: -2 index: 0 fraction: 0 end: way: -2 index: 1 fraction: 0",
+      m.getMatches().at(0).toString());
   }
 };
 
