@@ -49,6 +49,8 @@ class FrechetSublineMatcherTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(FrechetSublineMatcherTest);
   CPPUNIT_TEST(sublineTest);
+  CPPUNIT_TEST(runVTest);
+  CPPUNIT_TEST(runCircleTest);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -56,6 +58,77 @@ public:
   {
 
   }
+
+  void runVTest()
+  {
+    return;
+
+    OsmMapPtr map = createMap();
+
+    /*
+     * Create ways like this:
+     * w1 \    / w2
+     *     \  /
+     *      \/
+     */
+    Coordinate c1[] = { Coordinate(0.0, 0.0), Coordinate(-15.0, 50.0), Coordinate::getNull() };
+    WayPtr w1 = TestUtils::createWay(map, Status::Unknown1, c1, 10.0, "w1");
+
+    Coordinate c2[] = { Coordinate(0.0, 0.0), Coordinate(15.0, 50.0), Coordinate::getNull() };
+    WayPtr w2 = TestUtils::createWay(map, Status::Unknown2, c2, 10.0, "w2");
+
+    FrechetSublineMatcher uut;
+
+    double score;
+    vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
+
+    HOOT_STR_EQUALS(1, m.size());
+    HOOT_STR_EQUALS(
+      "subline 1: start: way: -1 index: 0 fraction: 0 end: way: -1 index: 1 fraction: 0\n"
+      "subline 2: start: way: -2 index: 0 fraction: 0 end: way: -2 index: 1 fraction: 0",
+      m[0].toString());
+  }
+
+  /**
+   * This is a nasty little situation that showed up in the DC data when doing some real world
+   * testing.
+   *
+   * This creates a really poor match, but tests for an edge condition in MaximalSubline
+   */
+  void runCircleTest()
+  {
+    OsmReader reader;
+
+    shared_ptr<OsmMap> map(new OsmMap());
+    OsmMap::resetCounters();
+    reader.read("test-files/algorithms/MaximalSublineCircleTestIn.osm", map);
+
+    double score;
+
+    MapProjector::projectToPlanar(map);
+
+    {
+      WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "1")[0]);
+      WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "2")[0]);
+
+      FrechetSublineMatcher uut;
+
+      vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
+      HOOT_STR_EQUALS(1, m.size());
+    }
+
+    {
+      WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "1")[0]);
+      WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "2")[0]);
+      w1->reverseOrder();
+
+      FrechetSublineMatcher uut;
+
+      vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
+      HOOT_STR_EQUALS(1, m.size());
+    }
+  }
+
 };
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetSublineMatcherTest, "current");
