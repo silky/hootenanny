@@ -60,7 +60,7 @@ WaySublineMatchString FrechetSublineMatcher::findMatch(const ConstOsmMapPtr& map
   //  Calculate the Frechet subline
   frechet_subline max_subline = FrechetDistance::calculateSubline(mapCopy, way1NonConst, way2NonConst, mrd);
   //  Make sure that there is a valid subline
-  if (max_subline.size() > 1)
+  if (max_subline.size() <= 1)
   {
     return WaySublineMatchString();
   }
