@@ -38,6 +38,8 @@ public class Maps {
 
     private String displayName;
 
+    private String altName;
+
     private Long id;
 
     private Boolean publicCol;
@@ -60,6 +62,14 @@ public class Maps {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getAltName() {
+        return altName;
+    }
+
+    public void setAltName(String altName) {
+        this.altName = altName;
     }
 
     public Long getId() {

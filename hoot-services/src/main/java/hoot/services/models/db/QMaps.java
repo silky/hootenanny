@@ -54,6 +54,8 @@ public class QMaps extends com.querydsl.sql.RelationalPathBase<Maps> {
 
     public final StringPath displayName = createString("displayName");
 
+    public final StringPath altName = createString("altName");    
+
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final BooleanPath publicCol = createBoolean("publicCol");
@@ -87,6 +89,7 @@ public class QMaps extends com.querydsl.sql.RelationalPathBase<Maps> {
     public void addMetadata() {
         addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(5).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(displayName, ColumnMetadata.named("display_name").withIndex(2).ofType(Types.VARCHAR).withSize(255).notNull());
+        addMetadata(altName, ColumnMetadata.named("alt_name").withIndex(7).ofType(Types.VARCHAR).withSize(255));                
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(publicCol, ColumnMetadata.named("public").withIndex(4).ofType(Types.BIT).withSize(1).notNull());
         addMetadata(tags, ColumnMetadata.named("tags").withIndex(6).ofType(Types.OTHER).withSize(2147483647));

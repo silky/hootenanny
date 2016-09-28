@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 public class MapLayer {
     private long id;
     private String name;
+    private String altName;
     private Timestamp date;
     private boolean canExportToOsmApiDb;
 
@@ -55,6 +56,14 @@ public class MapLayer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getAltName() {
+        return altName;
+    }
+
+    public void setAltName(String altName) {
+        this.altName = altName;
     }
 
     public String getDate() {

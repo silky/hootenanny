@@ -746,6 +746,7 @@ public class Map extends Maps {
             MapLayer mapLayer = new MapLayer();
             mapLayer.setId(mapLayerRecord.getId());
             mapLayer.setName(mapLayerRecord.getDisplayName());
+            mapLayer.setAltName(mapLayerRecord.getAltName());
             mapLayer.setDate(mapLayerRecord.getCreatedAt());
 
             if (osmApiDbEnabled) {
