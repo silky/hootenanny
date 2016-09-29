@@ -89,6 +89,8 @@ public class FileUploadResource extends JobControllerBase {
      * @param inputName
      *            optional input name which is used in hoot db. Defaults to the
      *            file name.
+     * @param altName
+     *             optional display name which is used in hoot ui. Defaults to inputName.
      * @param userEmail
      *            mail address of the user requesting job
      * @param noneTranslation
@@ -104,6 +106,7 @@ public class FileUploadResource extends JobControllerBase {
     public Response processUpload2(@QueryParam("TRANSLATION") String translation,
                                    @QueryParam("INPUT_TYPE") String inputType,
                                    @QueryParam("INPUT_NAME") String inputName,
+                                   @QueryParam("ALT_NAME") String altName,
                                    @QueryParam("USER_EMAIL") String userEmail,
                                    @QueryParam("NONE_TRANSLATION") String noneTranslation,
                                    @QueryParam("FGDB_FC") String fgdbFeatureClasses,
@@ -227,7 +230,7 @@ public class FileUploadResource extends JobControllerBase {
 
             String batchJobId = UUID.randomUUID().toString();
             JSONArray jobArgs = createNativeRequest(reqList, zipCnt, shpZipCnt, fgdbZipCnt, osmZipCnt, geonamesZipCnt,
-                    shpCnt, fgdbCnt, osmCnt, geonamesCnt, zipList, translation, jobId, etlName, inputsList, userEmail,
+                    shpCnt, fgdbCnt, osmCnt, geonamesCnt, zipList, translation, jobId, etlName, altName, inputsList, userEmail,
                     noneTranslation, fgdbFeatureClasses);
 
             // userEmail
@@ -265,7 +268,7 @@ public class FileUploadResource extends JobControllerBase {
     private JSONArray createNativeRequest(JSONArray reqList, int zipCnt, int shpZipCnt,
             int fgdbZipCnt, int osmZipCnt, int geonamesZipCnt, int shpCnt, int fgdbCnt,
             int osmCnt, int geonamesCnt, List<String> zipList, String translation,
-            String jobId, String etlName, List<String> inputsList, String userEmail,
+            String jobId, String etlName, String altName, List<String> inputsList, String userEmail,
             String isNoneTranslation, String fgdbFeatureClasses) throws ParseException {
         JSONArray jobArgs = new JSONArray();
 
@@ -355,6 +358,7 @@ public class FileUploadResource extends JobControllerBase {
         param.put("INPUT_PATH", "upload/" + jobId);
         param.put("INPUT", inputs);
         param.put("INPUT_NAME", etlName);
+        param.put("ALT_NAME", altName);
         param.put("USER_EMAIL", userEmail);
 
         if (curInputType.equalsIgnoreCase("FGDB") && (fgdbFeatureClasses != null) && (!fgdbFeatureClasses.isEmpty())) {
