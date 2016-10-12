@@ -29,6 +29,7 @@
 
 // hoot
 #include <hoot/core/algorithms/SublineMatcher.h>
+#include <hoot/core/util/Configurable.h>
 
 namespace hoot
 {
@@ -36,7 +37,7 @@ namespace hoot
 /**
  * A SublineMatcher based on the Frechet distance algorithm.
  */
-class FrechetSublineMatcher : public SublineMatcher
+class FrechetSublineMatcher : public SublineMatcher, public Configurable
 {
 public:
   static std::string className() { return "hoot::FrechetSublineMatcher"; }
@@ -57,6 +58,12 @@ public:
   virtual void setMinSplitSize(Meters /*minSplitSize*/) { }
 
   virtual void setHeadingDelta(Meters /*headingDelta*/) { }
+
+  virtual void setConfiguration(const Settings &conf);
+
+private:
+
+  Radians _maxAngle;
 };
 
 }

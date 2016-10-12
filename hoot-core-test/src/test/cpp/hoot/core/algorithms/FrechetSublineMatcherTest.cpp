@@ -61,8 +61,7 @@ public:
 
   void runVTest()
   {
-    return;
-
+    Settings s;
     OsmMapPtr map = createMap();
 
     /*
@@ -78,9 +77,10 @@ public:
     WayPtr w2 = TestUtils::createWay(map, Status::Unknown2, c2, 10.0, "w2");
 
     FrechetSublineMatcher uut;
+    uut.setConfiguration(s);
 
     double score;
-    vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
+    vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score, 53).getMatches();
 
     HOOT_STR_EQUALS(1, m.size());
     HOOT_STR_EQUALS(
@@ -97,12 +97,11 @@ public:
    */
   void runCircleTest()
   {
-    OsmReader reader;
-
+    Settings s;
     shared_ptr<OsmMap> map(new OsmMap());
     OsmMap::resetCounters();
+    OsmReader reader;
     reader.read("test-files/algorithms/MaximalSublineCircleTestIn.osm", map);
-
     double score;
 
     MapProjector::projectToPlanar(map);
@@ -112,25 +111,20 @@ public:
       WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "2")[0]);
 
       FrechetSublineMatcher uut;
+      uut.setConfiguration(s);
 
       vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
       HOOT_STR_EQUALS(1, m.size());
-    }
-
-    {
-      WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "1")[0]);
-      WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "2")[0]);
-      w1->reverseOrder();
-
-      FrechetSublineMatcher uut;
-
-      vector<WaySublineMatch> m = uut.findMatch(map, w1, w2, score).getMatches();
-      HOOT_STR_EQUALS(1, m.size());
+      HOOT_STR_EQUALS(
+        "subline 1: start: way: -1 index: 0 fraction: 0 end: way: -1 index: 12 fraction: 0\n"
+        "subline 2: start: way: -2 index: 0 fraction: 0 end: way: -2 index: 25 fraction: 0",
+        m[0].toString());
     }
   }
 
 };
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetSublineMatcherTest, "current");
+//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetSublineMatcherTest, "quick");
 
 }

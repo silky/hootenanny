@@ -53,15 +53,135 @@ namespace hoot
 class FrechetDistanceTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(FrechetDistanceTest);
+//  CPPUNIT_TEST(simpleFrechet);
+//  CPPUNIT_TEST(homologousFrechet);
+//  CPPUNIT_TEST(sublineFrechet);
+  CPPUNIT_TEST(tailFrechet);
+/*
   CPPUNIT_TEST(matrixTest);
   CPPUNIT_TEST(sublineTest);
   CPPUNIT_TEST(sublineMatrixTest);
   CPPUNIT_TEST(sublineMatrixReverseTest);
   CPPUNIT_TEST(polygonTest);
   CPPUNIT_TEST(writeFiles);
+*/
   CPPUNIT_TEST_SUITE_END();
 
 public:
+
+  void simpleFrechet()
+  {
+    OsmMapPtr map = createTestMapSimple();
+    WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    FrechetDistance fd_simple(map, w1, w2);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.00, fd_simple.distance(), 0.01);
+  }
+
+  void homologousFrechet()
+  {
+    OsmMapPtr map = createTestMapHomologous();
+    WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    FrechetDistance fd_homologous(map, w1, w2);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.17, fd_homologous.distance(), 0.01);
+  }
+
+  void sublineFrechet()
+  {
+    OsmMapPtr map = createTestMapPartial();
+    WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    FrechetDistance fd(map, w1, w2);
+    frechet_subline subline2 = fd.maxSubline(1.25);
+
+    frechet_subline optimal_subline = createTestSubline();
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline2.size());
+
+    for (frechet_subline::size_type i = 0; i < subline2.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline2[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline2[i].second);
+    }
+  }
+
+  void tailFrechet()
+  {
+    OsmMapPtr map = createTailMap();
+    WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    FrechetDistance fd(map, w1, w2);
+
+    frechet_subline subline = fd.maxSubline(5);
+    frechet_subline optimal_subline = createTailSubline();
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+  }
+
+  frechet_subline createTailSubline()
+  {
+    frechet_subline optimal_subline;
+    optimal_subline.push_back(vertex_match(0, 0));
+    optimal_subline.push_back(vertex_match(1, 1));
+    optimal_subline.push_back(vertex_match(2, 2));
+    optimal_subline.push_back(vertex_match(3, 3));
+    return optimal_subline;
+  }
+
+  OsmMapPtr createTailMap()
+  {
+    OsmMap::resetCounters();
+    shared_ptr<OsmMap> map(new OsmMap());
+    OGREnvelope env;
+    env.MinX = 0;
+    env.MinY = 0;
+    env.MaxX = 1;
+    env.MaxY = 1;
+    MapProjector::projectToOrthographic(map, env);
+
+    Coordinate c1[] = {
+      Coordinate(10.0, 10.0), Coordinate(20.0, 20.0), Coordinate(30.0, 15.0), Coordinate(40.0, 20.0), Coordinate(50.0, 10.0), Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
+
+    Coordinate c2[] = {
+      Coordinate(10.0, 12.0), Coordinate(20.0, 22.0), Coordinate(30.0, 17.0), Coordinate(40.0, 22.0), Coordinate(45.0, 32.0), Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
+
+    return map;
+  }
+
+  OsmMapPtr createTestMapSimple()
+  {
+    OsmMap::resetCounters();
+    shared_ptr<OsmMap> map(new OsmMap());
+    OGREnvelope env;
+    env.MinX = 0;
+    env.MinY = 0;
+    env.MaxX = 1;
+    env.MaxY = 1;
+    MapProjector::projectToOrthographic(map, env);
+
+    Coordinate c1[] = {
+      Coordinate(1.0, 2.0), Coordinate(21.0, 22.0), Coordinate(31.0, 32.0), Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c1, 5, "w1");
+
+    Coordinate c2[] = {
+      Coordinate(1.0, 1.0), Coordinate(11.0, 11.0),  Coordinate(31.0, 31.0), Coordinate::getNull() };
+    TestUtils::createWay(map, Status::Unknown1, c2, 5, "w2");
+
+    return map;
+  }
 
   void writeFiles()
   {
@@ -115,13 +235,13 @@ public:
     CPPUNIT_ASSERT_DOUBLES_EQUAL(values[5][6], frechet[5][6], 0.001);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(values[6][7], frechet[6][7], 0.001);
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculate(frechet), 0.01);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculate(frechet), 0.01);
 
     OsmMapPtr map = createTestMapHomologous();
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculate(map, w1, w2), 0.01);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculate(map, w1, w2), 0.01);
 
     map = OsmMapPtr(new OsmMap());
     OsmReader reader;
@@ -130,7 +250,7 @@ public:
     w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculate(map, w1, w2), 0.01);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculate(map, w1, w2), 0.01);
   }
 
   void sublineTest()
@@ -139,7 +259,7 @@ public:
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    frechet_subline subline = FrechetDistance::calculateSubline(map, w1, w2, 2);
+    frechet_subline subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 2);
 
     frechet_subline optimal_subline;
     optimal_subline.push_back(vertex_match(0, 0));
@@ -160,6 +280,23 @@ public:
       CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
     }
 
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetHomologous.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 2);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
   }
 
   void sublineMatrixTest()
@@ -188,11 +325,11 @@ public:
       for (int c = 0; c < cols; c++)
         frechet[r][c] = values[r][c];
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.75, FrechetDistance::calculate(frechet), 0.001);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2.75, FrechetDistanceOld::calculate(frechet), 0.001);
 
     frechet_subline optimal_subline = createTestSubline();
 
-    frechet_subline subline1 = FrechetDistance::calculateSubline(frechet, 1.25);
+    frechet_subline subline1 = FrechetDistanceOld::calculateSubline(frechet, 1.25);
 
     CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline1.size());
 
@@ -206,7 +343,25 @@ public:
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    frechet_subline subline2 = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+    frechet_subline subline2 = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline2.size());
+
+    for (frechet_subline::size_type i = 0; i < subline2.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline2[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline2[i].second);
+    }
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    subline2 = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
 
     CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline2.size());
 
@@ -225,7 +380,7 @@ public:
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    frechet_subline subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+    frechet_subline subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
 
     CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
 
@@ -237,11 +392,54 @@ public:
 
     optimal_subline = createTestSublineReverse2();
 
-    map = createTestMapReverse2();
+    map = createTestMapPartial();
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->setTag("oneway", "true");
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->reverseOrder();
+
+    subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+
+    optimal_subline = createTestSublineReverse1();
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w1->reverseOrder();
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+    w2->setTag("oneway", "true");
+
+    subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
+
+    CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
+
+    for (frechet_subline::size_type i = 0; i < subline.size(); i++)
+    {
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].first, subline[i].first);
+      CPPUNIT_ASSERT_EQUAL(optimal_subline[i].second, subline[i].second);
+    }
+
+    optimal_subline = createTestSublineReverse2();
+
+    map = OsmMapPtr(new OsmMap());
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPartial.osm", map);
+    MapProjector::projectToPlanar(map);
     w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    subline = FrechetDistance::calculateSubline(map, w1, w2, 1.25);
+    subline = FrechetDistanceOld::calculateSubline(map, w1, w2, 1.25);
 
     CPPUNIT_ASSERT_EQUAL(optimal_subline.size(), subline.size());
 
@@ -277,14 +475,24 @@ public:
       for (int c = 0; c < cols; c++)
         frechet[r][c] = values[r][c];
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculatePoly(frechet), 0.01);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculatePoly(frechet), 0.01);
 
     OsmMapPtr map = createTestMapPoly();
 
     WayPtr w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
     WayPtr w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
 
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistance::calculatePoly(map, w1, w2), 0.01);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculatePoly(map, w1, w2), 0.01);
+
+    map = OsmMapPtr(new OsmMap());
+    OsmReader reader;
+    reader.setDefaultStatus(Status::Unknown1);
+    reader.read("test-files/algorithms/FrechetPolygon.osm", map);
+    MapProjector::projectToPlanar(map);
+    w1 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w1")[0]);
+    w2 = map->getWay(FindWaysVisitor::findWaysByTag(map, "note", "w2")[0]);
+
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(1.90, FrechetDistanceOld::calculatePoly(map, w1, w2), 0.01);
   }
 
   OsmMapPtr createTestMapHomologous()
@@ -453,7 +661,8 @@ public:
   }
 };
 
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetDistanceTest, "current");
+//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetDistanceTest, "current");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(FrechetDistanceTest, "quick");
 
 }
 
