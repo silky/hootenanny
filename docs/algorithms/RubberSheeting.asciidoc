@@ -1,4 +1,5 @@
 
+[[RubberSheeting]]
 == Rubber Sheeting
 
 An option while conflating two data sets is to use rubber sheeting (See
@@ -38,7 +39,7 @@ candidate tie point:
    angles in the intersections to find the maximum score. Any extra ways that
    are not matched are omitted from the score. Intuitively this score represents
    how well the angles match between the two intersections. The score is
-   calculated as: 
+   calculated as:
 ** theta1 and theta2 represent the vector of the angles of matched ways. Where
    theta1~i~ best matches theta2~i~.
 ** `s` is a tunable parameter. The larger the value the less forgiving the score

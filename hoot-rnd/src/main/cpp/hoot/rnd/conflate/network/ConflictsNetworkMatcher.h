@@ -48,7 +48,7 @@ using namespace Tgs;
 class ConflictsNetworkMatcherTest;
 
 /**
- *
+ * See algorithm docs for a discussion of how/why.
  */
 class ConflictsNetworkMatcher :
   public NetworkMatcher
