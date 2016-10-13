@@ -34,8 +34,11 @@
 // GEOS
 #include <geos/geom/LineString.h>
 // Hoot
-#include <hoot/core/algorithms/FrechetDistance.h>
+#include <hoot/core/algorithms/FrechetSublineMatcher.h>
+#include <hoot/core/io/OsmReader.h>
+#include <hoot/core/io/OsmWriter.h>
 #include <hoot/core/visitors/FindWaysVisitor.h>
+#include <hoot/core/MapProjector.h>
 
 #include "../TestUtils.h"
 
@@ -57,6 +60,14 @@ public:
   void sublineTest()
   {
 
+  }
+
+  OsmMapPtr createMap()
+  {
+    OsmMap::resetCounters();
+    OsmMapPtr map(new OsmMap());
+    MapProjector::projectToPlanar(map);
+    return map;
   }
 
   void runVTest()
