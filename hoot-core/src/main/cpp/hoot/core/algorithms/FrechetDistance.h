@@ -49,6 +49,10 @@ typedef std::vector<vertex_match> frechet_subline;
 
 typedef shared_ptr<LineString> LineStringPtr;
 
+/** Forward declaration for friend class so that the test class can access protected members
+ */
+class FrechetDistanceTest;
+
 /** Class for calculating Frechet Distance between two ways and calculating maximal subline matches.
  *  Algorithm developed from "A new merging process for data integration base on the descrete Frechet distance"
  *  (http://thomas.devogele.free.fr/articles/avant_2003_selection/DevogeleSDH2002.pdf)
@@ -119,6 +123,8 @@ protected:
 
 
 protected:
+  //  Allow test class to access protected members for white box testing
+  friend class FrechetDistanceTest;
   //  Copies of the map and both ways
   OsmMapPtr _map;
   WayPtr _w1;
