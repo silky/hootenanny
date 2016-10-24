@@ -53,7 +53,7 @@ public:
   virtual WaySublineMatchString findMatch(const ConstOsmMapPtr& map, const ConstWayPtr& way1,
     const ConstWayPtr& way2, double& score, Meters maxRelevantDistance = -1) const;
 
-  virtual void setMaxRelevantAngle(Radians /*r*/) { }
+  virtual void setMaxRelevantAngle(Radians angle) { _maxAngle = angle; }
 
   virtual void setMinSplitSize(Meters /*minSplitSize*/) { }
 

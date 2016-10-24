@@ -45,38 +45,42 @@ namespace hoot
 FrechetDistance::FrechetDistance(const ConstOsmMapPtr &map, const ConstWayPtr &way1, const ConstWayPtr &way2, Radians maxAngle)
   : _matrix(boost::extents[way1->getNodeCount()][way2->getNodeCount()]), _maxAngle(maxAngle)
 {
+  //  Copy the map and two ways
   _map.reset(new OsmMap());
   CopySubsetOp(map,
                way1->getElementId(),
                way2->getElementId()).apply(_map);
   _w1 = _map->getWay(way1->getId());
   _w2 = _map->getWay(way2->getId());
-
+  //  Convert both ways to line strings
   _ls1 = ElementConverter(_map).convertToLineString(_w1);
   _ls2 = ElementConverter(_map).convertToLineString(_w2);
-
   //  Precalculate the locations and distances for way1
   LocationOfPoint locatorWay2(_map, _w2);
   for (size_t i = 0; i < _w1->getNodeCount(); i++)
   {
     Coordinate pointOnWay1 = _map->getNode(_w1->getNodeId(i))->toCoordinate();
     WayLocation nearestPointOnWay2 = locatorWay2.locate(pointOnWay1);
+    //  Save off the nearest point on way2 and the distance to it
     _locations_w1.push_back(nearestPointOnWay2);
     _distances_w1.push_back(pointOnWay1.distance(nearestPointOnWay2.getCoordinate()));
   }
-
   //  Precalculate the locations and distances for way2
   LocationOfPoint locatorWay1(_map, _w1);
   for (size_t i = 0; i < _w2->getNodeCount(); i++)
   {
     Coordinate pointOnWay2 = _map->getNode(_w2->getNodeId(i))->toCoordinate();
     WayLocation nearestPointOnWay1 = locatorWay1.locate(pointOnWay2);
+    //  Save off the nearest point on way1 and the distance to it
     _locations_w2.push_back(nearestPointOnWay1);
     _distances_w2.push_back(pointOnWay2.distance(nearestPointOnWay1.getCoordinate()));
   }
-
   //  Precalculate the discreet matrix
   _matrix = calculateMatrix();
+
+
+//  TEST
+//  _maxAngle = M_PI / 2;
 }
 
 frechet_matrix FrechetDistance::calculateMatrix()
@@ -86,14 +90,11 @@ frechet_matrix FrechetDistance::calculateMatrix()
   if (rows < 1 || cols < 1)
     throw HootException("FrechetDistance::calculateMatrix - ways not valid sizes");
   frechet_matrix frechet(boost::extents[rows][cols]);
+  //  Iterate the matrix and calculate the distances
   for (int r = 0; r < rows; r++)
   {
     for (int c = 0; c < cols; c++)
-    {
       frechet[r][c] = _ls1->getCoordinateN(r).distance(_ls2->getCoordinateN(c));
-//      LOG_VAR(frechet[r][c]);
-    }
-//    LOG_VAR('\n');
   }
 
   return frechet;
@@ -101,23 +102,24 @@ frechet_matrix FrechetDistance::calculateMatrix()
 
 void FrechetDistance::advanceAndCheckRow(const int rows, const int cols, int& r, int& c, Meters& max_frechet)
 {
+  //  Only advance to and check the next row
   advanceAndCheck(rows, cols, r, c, max_frechet, true, false);
 }
 
 void FrechetDistance::advanceAndCheckColumn(const int rows, const int cols, int& r, int& c, Meters& max_frechet)
 {
+  //  Only advance to and check the next column
   advanceAndCheck(rows, cols, r, c, max_frechet, false, true);
 }
 
 void FrechetDistance::advanceAndCheckBoth(const int rows, const int cols, int& r, int& c, Meters& max_frechet)
 {
+  //  Advance to and check both the next column and next row
   advanceAndCheck(rows, cols, r, c, max_frechet, true, true);
 }
 
 void FrechetDistance::advanceAndCheck(const int rows, const int cols, int& r, int& c, Meters& max_frechet, bool advance_row, bool advance_col)
 {
-//  _angleDiff = WayHeading::deltaMagnitude(heading1, heading2);
-
   if (!advance_row && ! advance_col)
     return;
   //  Advance the row
@@ -125,6 +127,7 @@ void FrechetDistance::advanceAndCheck(const int rows, const int cols, int& r, in
   {
     max_frechet = max(max_frechet, _distances_w1[r]);
     r++;
+    //  Don't move off of the edge of the matrix
     if (r < rows)
       max_frechet = max(max_frechet, _distances_w1[r]);
   }
@@ -133,6 +136,7 @@ void FrechetDistance::advanceAndCheck(const int rows, const int cols, int& r, in
   {
     max_frechet = max(max_frechet, _distances_w2[c]);
     c++;
+    //  Don't move off of the edge of the matrix
     if (c < cols)
       max_frechet = max(max_frechet, _distances_w2[c]);
   }
@@ -140,48 +144,95 @@ void FrechetDistance::advanceAndCheck(const int rows, const int cols, int& r, in
 
 Radians FrechetDistance::getHeadingWay1(int index)
 {
+  //  Return the heading for _w1 at index
   return getHeading(_w1, index);
 }
 
 Radians FrechetDistance::getHeadingWay2(int index)
 {
+  //  Return the heading for _w2 at index
   return getHeading(_w2, index);
 }
 
 Radians FrechetDistance::getHeading(WayPtr way, int index)
 {
+  //  TEST
+  return getHeadingAvg(way, index);
+  //  END TEST
+
+  //  Setup the indices to check between
   int index1 = index;
   int index2 = index + 1;
-
+  //  Check the previous indices if index is the last node
   if (index == (long)(way->getNodeCount() - 1))
   {
     index1 = index - 1;
     index2 = index;
   }
-
+  //  Get the coordinates of the two nodes and create a line segment
   Coordinate c11 = _map->getNode(way->getNodeId(index1))->toCoordinate();
   Coordinate c12 = _map->getNode(way->getNodeId(index2))->toCoordinate();
-
   LineSegment ls(c11, c12);
-
+  //  Make sure to ignore any duplicate nodes in the way
   while (ls.p0 == ls.p1)
   {
+    //  Ignore duplicates
     if (index2 == (long)(way->getNodeCount() - 1))
       index1--;
     else if (index1 > 0)
       index2++;
     else
       return 0;
+    //  Re-get the coordinates of the two nodes and create a line segment
     c11 = _map->getNode(way->getNodeId(index1))->toCoordinate();
     c12 = _map->getNode(way->getNodeId(index2))->toCoordinate();
-
     ls = LineSegment(c11, c12);
   }
-
+  //  Use the line segment angle if available or use the rough estimate from WayHeading::calculateHeading
   if (ls.p0 != ls.p1)
     return ls.angle();
   else
     return WayHeading::calculateHeading(WayLocation(_map, way, index, 0), 0.5);
+}
+
+Radians FrechetDistance::getHeadingAvg(WayPtr way, int index)
+{
+  //  Get the average of the previous, current, and next headings if possible
+  int start = index - 1;
+  int stop = index + 2;
+  //  No previous exists
+  if (start < 0)
+    start++;
+  //  Can't go next or possibly current
+  while (stop >= (int)way->getNodeCount())
+  {
+    start--;
+    stop--;
+  }
+  //  Don't shift off of the left side of the way
+  if (start < 0)
+    start = 0;
+  //  This case is a way with only one point
+  if (stop == 0)
+    return WayHeading::calculateHeading(WayLocation(_map, way, 0, 0), 0.5);
+  //  Iterate the 3 (hopefully) segments, getting their headings
+  Radians heading = 0.0;
+  int count = 0;
+  for (int i = start; i < stop; i++)
+  {
+    Coordinate c11 = _map->getNode(way->getNodeId(i))->toCoordinate();
+    Coordinate c12 = _map->getNode(way->getNodeId(i + 1))->toCoordinate();
+    LineSegment ls = LineSegment(c11, c12);
+    //  Sum up the heading
+    if (ls.p0 != ls.p1)
+      heading += ls.angle();
+    else
+      heading += WayHeading::calculateHeading(WayLocation(_map, way, i, 0), 0.5);
+    //  Increment the denominator
+    count++;
+  }
+  //  Average the heading
+  return heading / count;
 }
 
 Meters FrechetDistance::distance()
@@ -200,10 +251,7 @@ frechet_subline FrechetDistance::maxSubline(Meters maxDistance)
   int cols = _ls2->getNumPoints();
   if (rows < 1 || cols < 1)
     throw HootException("FrechetDistance::_calculate - Invalid matrix size");
-  //  Don't create a subline for non-similar ways
-  if (DirectionFinder::isSimilarDirection(_map, _w1, _w2) == false)
-    return best_subline;
-
+  //  Get the uninformed Frechet distance as the max
   Meters max_frechet = distance();
 
   frechet_subline starts;
@@ -238,19 +286,18 @@ frechet_subline FrechetDistance::maxSubline(Meters maxDistance)
   }
 
   Meters best_frechet = maxDistance;
-
+  //  Iterate all of the valid starting points in order to reduce search
   for (frechet_subline::size_type i = 0; i < starts.size(); i++)
   {
     frechet_subline subline;
 
     int r = starts[i].first;
     int c = starts[i].second;
-
     //  Use the starting position and modify it if the ways are reversed
     subline.push_back(vertex_match(r, c));
-
+    //  The beginning frechet distance is between the two starting nodes
     Meters frechet = _matrix[r][c];
-
+    //  Iterate through the matrix from the start position
     while (r != rows && c != cols)
     {
       Meters max_frechet = 0.0;
@@ -271,38 +318,29 @@ frechet_subline FrechetDistance::maxSubline(Meters maxDistance)
       //  Check that the distance is less than the max distance in order to include this node
       if (value < maxDistance)
       {
-        //  Check to make sure that the headings are correct before adding the subline entry
+        //  Check to make sure that the headings are within the max angle before adding the subline entry
         Radians h1 = getHeadingWay1(r);
         Radians h2 = getHeadingWay2(c);
-        Radians angleDiff = WayHeading::deltaMagnitude(h1, h2);
-        if (angleDiff <= _maxAngle)
+        Radians delta = WayHeading::deltaMagnitude(h1, h2);
+        if (delta <= _maxAngle)
         {
           subline.push_back(vertex_match(r, c));
-          frechet = max(frechet, _matrix[r][c]);
+          frechet = max(frechet, value);
         }
         else
-        {
-          Radians h1 = getHeadingWay1(r);
-          Radians h2 = getHeadingWay2(c);
-          Radians angleDiff = WayHeading::deltaMagnitude(h1, h2);
-          LOG_VAR(_w1->getNodeId(r));
-          LOG_VAR(_w2->getNodeId(c));
-          LOG_VAR(h1);
-          LOG_VAR(h2);
-          LOG_VAR(angleDiff);
-          LOG_VAR(_maxAngle);
           break;
-        }
       }
       else
-      {
         break;
-      }
     }
     //  Do some backtracking if the two endpoints are too far away of each other
     while (frechet > maxDistance)
     {
+      //  Backtrack
       subline.pop_back();
+      if (subline.size() < 1)
+        break;
+      //  Get the distance between the last two nodes
       vertex_match m = subline[subline.size() - 1];
       frechet = _matrix[m.first][m.second];
     }
@@ -314,7 +352,6 @@ frechet_subline FrechetDistance::maxSubline(Meters maxDistance)
       best_subline = subline;
     }
   }
-
   return best_subline;
 }
 

@@ -116,11 +116,23 @@ protected:
    * See advanceAndCheck for parameter information
    */
   void advanceAndCheckBoth(const int rows, const int cols, int& r, int& c, Meters& max_frechet);
-
+  /**
+   * @brief getHeading - get the heading, in radians, of the way specified at the node index specified
+   *  used to ensure that segments of two ways are both heading the same general direction
+   * @param way - pointer to way to get the heading of
+   * @param index - node index into way of where to get the heading at
+   * @return heading of way at the point index in radians
+   */
+  Radians getHeading(WayPtr way, int index);
+  /**
+   * @brief getHeadingWay1 and getHeadingWay2 - helper functions to make using getHeading easier to use
+   * @param index - node index into way of where to get the heading at
+   * @return heading of way at the point index in radians
+   */
   Radians getHeadingWay1(int index);
   Radians getHeadingWay2(int index);
-  Radians getHeading(WayPtr way, int index);
 
+  Radians getHeadingAvg(WayPtr way, int index);
 
 protected:
   //  Allow test class to access protected members for white box testing

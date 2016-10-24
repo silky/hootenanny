@@ -1,5 +1,5 @@
 stats = (stat) OR (input map 1 stat) (input map 2 stat) (output map stat)
-Node Count	36	65	37	
+Node Count	36	65	36	
 Way Count	4	4	9	
 Relation Count	0	0	0	
 Total Feature Count	4	4	9	

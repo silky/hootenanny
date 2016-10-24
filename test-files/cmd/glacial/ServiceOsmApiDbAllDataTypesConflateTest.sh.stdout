@@ -40,11 +40,11 @@ STEP 8: Writing a SQL changeset file that is the difference between the cropped 
 
 STEP 9: Executing the changeset SQL on the osm api db...
 Changeset(s) Created: 1
-Changeset Details: min_lat=38.846722, max_lat=39.594419, min_lon=-104.919759, max_lon=-104.714569, num_changes=307
-Node(s) Created: 144
+Changeset Details: min_lat=38.846722, max_lat=39.594419, min_lon=-104.919759, max_lon=-104.714569, num_changes=304
+Node(s) Created: 142
 Node(s) Modified: 0
 Node(s) Deleted: 117
-Way(s) Created: 23
+Way(s) Created: 22
 Way(s) Modified: 0
 Way(s) Deleted: 14
 Relation(s) Created: 9
@@ -52,3 +52,5 @@ Relation(s) Modified: 0
 Relation(s) Deleted: 0
 
 STEP 11: Reading the entire contents of the osm api db, writing it into a file, and verifying it...
+12:26:52.310 INFO  .../hoot/core/cmd/BaseCommand.cpp(  78) Loading map data from test-files/cmd/glacial/ServiceOsmApiDbAllDataTypesConflateTest/output.osm ...
+12:26:52.314 INFO  .../hoot/core/cmd/BaseCommand.cpp(  78) Loading map data from test-output/cmd/glacial/ServiceOsmApiDbAllDataTypesConflateTest/11-output-PulledFromOsmApiDb.osm ...

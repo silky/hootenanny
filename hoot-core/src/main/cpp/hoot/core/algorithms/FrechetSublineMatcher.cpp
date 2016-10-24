@@ -78,7 +78,7 @@ WaySublineMatchString FrechetSublineMatcher::findMatch(const ConstOsmMapPtr& map
     shared_ptr<LineString> ls2 = ElementConverter(mapCopy).convertToLineString(sub2);
     if (ls1->isValid() && ls2->isValid())
     {
-      score = max(ls1->getLength(), ls2->getLength());
+      score = min(ls1->getLength(), ls2->getLength());
     }
   }
   //  Create the match and match string
