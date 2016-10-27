@@ -78,9 +78,6 @@ FrechetDistance::FrechetDistance(const ConstOsmMapPtr &map, const ConstWayPtr &w
   //  Precalculate the discreet matrix
   _matrix = calculateMatrix();
 
-
-//  TEST
-//  _maxAngle = M_PI / 2;
 }
 
 frechet_matrix FrechetDistance::calculateMatrix()
@@ -325,7 +322,7 @@ frechet_subline FrechetDistance::maxSubline(Meters maxDistance)
         if (delta <= _maxAngle)
         {
           subline.push_back(vertex_match(r, c));
-          frechet = max(frechet, value);
+          frechet = min(frechet, value);
         }
         else
           break;

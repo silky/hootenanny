@@ -44,6 +44,8 @@
 
 #include "MaximalSubline.h"
 
+#include "FrechetSublineMatcher.h"
+
 namespace hoot
 {
 
@@ -71,7 +73,8 @@ void MaximalSublineStringMatcher::_configureSublineMatcher()
 {
   if (!_sublineMatcher)
   {
-    _sublineMatcher.reset(new MaximalSublineMatcher());
+    _sublineMatcher.reset(new FrechetSublineMatcher());
+//    _sublineMatcher.reset(new MaximalSublineMatcher());
   }
   _sublineMatcher->setMaxRelevantAngle(_maxAngle);
   _sublineMatcher->setMinSplitSize(_minSplitsize);
