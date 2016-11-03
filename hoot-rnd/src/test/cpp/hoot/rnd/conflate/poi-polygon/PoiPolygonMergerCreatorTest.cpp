@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -134,10 +134,8 @@ public:
   void setUp()
   {
     TestUtils::resetEnvironment();
-    conf().set(ConfigOptions().getMatchCreatorsKey(),
-      "hoot::BuildingMatchCreator;hoot::PlacesPoiMatchCreator;hoot::PoiPolygonMatchCreator");
-    conf().set(ConfigOptions().getMergerCreatorsKey(),
-      "hoot::BuildingMergerCreator;hoot::PlacesPoiMergerCreator;hoot::PoiPolygonMergerCreator");
+    conf().set(ConfigOptions().getMatchCreatorsKey(), "hoot::PoiPolygonMatchCreator");
+    conf().set(ConfigOptions().getMergerCreatorsKey(), "hoot::PoiPolygonMergerCreator");
   }
 
   void tearDown()
